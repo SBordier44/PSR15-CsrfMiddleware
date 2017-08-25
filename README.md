@@ -1,6 +1,7 @@
 # PSR-15 Middleware
 
 [![Build Status](https://travis-ci.org/NuBOXDevCom/PSR15-CsrfMiddleware.svg?branch=master)](https://travis-ci.org/NuBOXDevCom/PSR15-CsrfMiddleware)
+[![Coverage Status](https://coveralls.io/repos/github/NuBOXDevCom/PSR15-CsrfMiddleware/badge.svg?branch=master)](https://coveralls.io/github/NuBOXDevCom/PSR15-CsrfMiddleware?branch=master)
 
 This middleware check every POST, PUT or DELETE request for a CSRF Token.
 Token are persisted using an ArrayAccess compatible Session and are generated on demand.
