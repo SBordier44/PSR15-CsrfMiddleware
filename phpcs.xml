@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ruleset name="Csrf Middleware">
+    <description>PSR15 Middleware for CSRF Security</description>
+    <arg name="colors"/>
+    <arg value="p"/>
+    <file>src</file>
+    <file>tests</file>
+    <rule ref="PSR2"></rule>
+</ruleset>
