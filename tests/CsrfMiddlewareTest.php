@@ -1,15 +1,15 @@
 <?php
 
-namespace NDC\Csrf\Tests;
+namespace Tests;
 
 use ArrayAccess;
-use Interop\Http\ServerMiddleware\DelegateInterface;
 use NDC\Csrf\CsrfMiddleware;
 use NDC\Csrf\InvalidCsrfException;
 use NDC\Csrf\NoCsrfException;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use stdClass;
 use TypeError;
 
@@ -19,8 +19,8 @@ class CsrfMiddlewareTest extends TestCase
     {
         $middleware = $this->makeMiddleware();
         $delegate = $this->makeDelegate();
-        $delegate->expects(static::once())->method('process');
-        $middleware->process($this->makeRequest('GET'), $delegate);
+        $delegate->expects(static::once())->method('handle');
+        $middleware->process($this->makeRequest(), $delegate);
     }
 
     private function makeMiddleware(&$session = [])
@@ -30,8 +30,8 @@ class CsrfMiddlewareTest extends TestCase
 
     private function makeDelegate()
     {
-        $delegate = $this->getMockBuilder(DelegateInterface::class)->getMock();
-        $delegate->method('process')->willReturn($this->makeResponse());
+        $delegate = $this->getMockBuilder(RequestHandlerInterface::class)->getMock();
+        $delegate->method('handle')->willReturn($this->makeResponse());
 
         return $delegate;
     }
@@ -54,7 +54,7 @@ class CsrfMiddlewareTest extends TestCase
     {
         $middleware = $this->makeMiddleware();
         $delegate = $this->makeDelegate();
-        $delegate->expects(static::never())->method('process');
+        $delegate->expects(static::never())->method('handle');
         $this->expectException(NoCsrfException::class);
         $middleware->process($this->makeRequest('POST'), $delegate);
     }
@@ -64,7 +64,7 @@ class CsrfMiddlewareTest extends TestCase
         $middleware = $this->makeMiddleware();
         $token = $middleware->generateToken();
         $delegate = $this->makeDelegate();
-        $delegate->expects(static::once())->method('process')->willReturn($this->makeResponse());
+        $delegate->expects(static::once())->method('handle')->willReturn($this->makeResponse());
         $middleware->process($this->makeRequest('POST', ['_csrf' => $token]), $delegate);
     }
 
@@ -72,7 +72,7 @@ class CsrfMiddlewareTest extends TestCase
     {
         $middleware = $this->makeMiddleware();
         $delegate = $this->makeDelegate();
-        $delegate->expects(static::never())->method('process');
+        $delegate->expects(static::never())->method('handle');
         $this->expectException(InvalidCsrfException::class);
         $middleware->process($this->makeRequest('POST', ['_csrf' => 'aze']), $delegate);
     }
@@ -99,7 +99,7 @@ class CsrfMiddlewareTest extends TestCase
         $middleware = $this->makeMiddleware();
         $token = $middleware->generateToken();
         $delegate = $this->makeDelegate();
-        $delegate->expects(static::once())->method('process')->willReturn($this->makeResponse());
+        $delegate->expects(static::once())->method('handle')->willReturn($this->makeResponse());
         $middleware->process($this->makeRequest('POST', ['_csrf' => $token]), $delegate);
         $this->expectException(InvalidCsrfException::class);
         $middleware->process($this->makeRequest('POST', ['_csrf' => $token]), $delegate);
@@ -107,6 +107,7 @@ class CsrfMiddlewareTest extends TestCase
 
     public function testLimitTokens()
     {
+        $token = '';
         $session = [];
         $middleware = $this->makeMiddleware($session);
         for ($i = 0; $i < 100; ++$i) {

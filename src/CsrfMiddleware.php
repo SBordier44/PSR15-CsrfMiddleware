@@ -3,10 +3,10 @@
 namespace NDC\Csrf;
 
 use ArrayAccess;
-use Interop\Http\ServerMiddleware\DelegateInterface;
-use Interop\Http\ServerMiddleware\MiddlewareInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\MiddlewareInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use TypeError;
 
 class CsrfMiddleware implements MiddlewareInterface
@@ -36,7 +36,7 @@ class CsrfMiddleware implements MiddlewareInterface
      * @param string            $sessionKey
      * @param string            $formKey
      *
-     * @throws \TypeError
+     * @throws TypeError
      */
     public function __construct(
         &$session,
@@ -52,13 +52,13 @@ class CsrfMiddleware implements MiddlewareInterface
     }
 
     /**
-     * @param $session
+     * @param mixed $session
      *
-     * @throws \TypeError
+     * @throws TypeError
      */
     private function testSession($session): void
     {
-        if (!is_array($session) && !$session instanceof ArrayAccess) {
+        if (!\is_array($session) && !$session instanceof ArrayAccess) {
             throw new TypeError('Session is not an array');
         }
     }
@@ -67,30 +67,30 @@ class CsrfMiddleware implements MiddlewareInterface
      * Process an incoming server request and return a response, optionally delegating
      * to the next middleware component to create the response.
      *
-     * @param ServerRequestInterface $request
-     * @param DelegateInterface      $delegate
+     * @param ServerRequestInterface  $request
+     * @param RequestHandlerInterface $handler
      *
      * @throws InvalidCsrfException
      * @throws NoCsrfException
      *
-     * @return null|ResponseInterface
+     * @return ResponseInterface
      */
-    public function process(ServerRequestInterface $request, DelegateInterface $delegate): ResponseInterface
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        if (in_array($request->getMethod(), ['PUT', 'POST', 'DELETE'], true)) {
+        if (\in_array($request->getMethod(), ['PUT', 'POST', 'DELETE'], true)) {
             $params = $request->getParsedBody() ?: [];
             if (!array_key_exists($this->formKey, $params)) {
                 throw new NoCsrfException();
             }
-            if (!in_array($params[$this->formKey], $this->session[$this->sessionKey] ?? [], true)) {
+            if (!\in_array($params[$this->formKey], $this->session[$this->sessionKey] ?? [], true)) {
                 throw new InvalidCsrfException();
             }
             $this->removeToken($params[$this->formKey]);
 
-            return $delegate->process($request);
+            return $handler->handle($request);
         }
 
-        return $delegate->process($request);
+        return $handler->handle($request);
     }
 
     /**
